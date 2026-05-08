@@ -1,34 +1,52 @@
 # Comparative Topological Analysis of Biological Neural Networks Using Canonical Complex Network Models
 
-## Research Question
+## Research question
+Which canonical network model best approximates the topology of a real biological neural network (C. elegans): random, lattice, small-world, or scale-free?
 
-How well do canonical complex network models reproduce the topological structure of a biological neural network, using the C. elegans connectome as the intended empirical dataset?
+## Dataset used
+- **Dataset**: OpenWorm ConnectomeToolbox `aconnectome_white_1986_whole.csv`
+- **URL**: https://raw.githubusercontent.com/openworm/ConnectomeToolbox/main/cect/data/aconnectome_white_1986_whole.csv
+- **Raw rows**: 2961 synaptic records
+- **Directed graph**: 309 nodes, 2812 edges, weighted (`synapses`) and typed (`chemical`/`electrical`)
+- **Analysis graph**: undirected, unweighted topology over largest connected component (309 nodes, 2511 edges)
 
-## Intended Dataset
+## Project structure
+- `data/raw/`: downloaded raw connectome
+- `data/processed/`: cleaned edge list for analysis
+- `results/figures/`: all plots
+- `results/tables/`: metric and experiment tables
+- `src/`: end-to-end code
+- `report/final_report.md`: course-report narrative
 
-The planned empirical dataset is the C. elegans connectome.
-
-## Planned Synthetic Models
-
-- Erdős-Rényi random graph
-- Regular lattice graph
-- Watts-Strogatz small-world graph
-- Barabási-Albert scale-free graph
-
-## Installation
-
-Create and activate a Python environment, then install dependencies:
-
+## Install
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
-## Future Pipeline
-
-After the scientific implementation is added, run the pipeline from the project root:
-
+## Run the full pipeline
 ```bash
 python src/main.py
 ```
 
-This repository currently contains only scaffolding and placeholders. The full analysis pipeline has not been implemented yet.
+## Main finding (short summary)
+Using normalized multi-metric distance, the **Barabási-Albert (scale-free)** model was the closest overall to the C. elegans topology in this run, followed by **Watts-Strogatz (small-world)**. This supports a **hybrid interpretation**: biological connectomes combine hub structure, clustering, and short path lengths rather than matching one pure canonical model.
+
+## Output files generated
+### Figures
+- `real_network_visualization.png`
+- `model_network_visualizations.png`
+- `degree_distribution_comparison.png`
+- `clustering_vs_pathlength_ws_sweep.png`
+- `metric_comparison_barplot.png`
+- `centrality_distribution_comparison.png`
+- `robustness_random_removal.png`
+- `robustness_targeted_removal.png`
+- `model_distance_ranking.png`
+
+### Tables
+- `real_network_summary.csv`
+- `all_metrics_comparison.csv`
+- `model_distance_ranking.csv`
+- `ws_sweep_results.csv`
+- `robustness_random.csv`
+- `robustness_targeted.csv`
