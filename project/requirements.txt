@@ -1,0 +1,9 @@
+networkx
+numpy
+pandas
+matplotlib
+scipy
+jupyter
+python-louvain
+powerlaw
+
