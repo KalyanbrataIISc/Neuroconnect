@@ -5,6 +5,8 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.matplotlib/
+.cache/
 
 # Virtual environments
 .venv/
@@ -14,18 +16,22 @@ env/
 # Jupyter
 .ipynb_checkpoints/
 
-# Local data and generated outputs
-data/raw/*
-data/processed/*
-results/figures/*
-results/tables/*
-!data/raw/.gitkeep
-!data/processed/.gitkeep
-!results/figures/.gitkeep
-!results/tables/.gitkeep
+# LaTeX build intermediates
+*.aux
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.out
+*.toc
+*.synctex.gz
+
+# Project deliverables
+# Data files, result CSVs, and generated figures are intentionally tracked
+# so the complete course submission is reproducible from GitHub.
 
 # OS/editor files
 .DS_Store
 .vscode/
 .idea/
-

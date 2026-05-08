@@ -1,0 +1,5 @@
+model,distance,rank
+barabasi_albert,0.29986372127069655,1
+watts_strogatz,0.3463828883947581,2
+erdos_renyi,0.45359430618436253,3
+regular_lattice,0.9818765431756971,4

@@ -23,9 +23,21 @@ Which canonical network model best approximates the topology of a real biologica
 python -m pip install -r requirements.txt
 ```
 
+If using the local conda environment from this machine:
+
+```bash
+conda run -n coglab python -m pip install -r requirements.txt
+```
+
 ## Run the full pipeline
 ```bash
 python src/main.py
+```
+
+Local conda command used for this rerun:
+
+```bash
+conda run -n coglab python src/main.py
 ```
 
 ## Main finding (short summary)

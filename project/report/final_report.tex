@@ -1,0 +1,500 @@
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{amsmath}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{url}
+
+\graphicspath{{../results/figures/}}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
+
+\title{\textbf{Comparative Topological Analysis of Biological Neural Networks Using Canonical Complex Network Models}}
+\author{Complex Systems Course Project}
+\date{May 2026}
+
+\begin{document}
+
+\hypersetup{pageanchor=false}
+\pagenumbering{roman}
+\maketitle
+
+\begin{abstract}
+This project investigates which canonical complex network model best approximates the topology of a real biological neural network. The empirical system studied is the \textit{Caenorhabditis elegans} connectome, represented as a graph derived from the OpenWorm ConnectomeToolbox dataset. Four synthetic graph families are generated and compared against the biological network: Erdos-Renyi random graphs, regular ring lattices, Watts-Strogatz small-world graphs, and Barabasi-Albert scale-free graphs. The comparison uses matched node counts, approximately matched edge counts or average degree, graph-theoretic metrics, robustness experiments, and a normalized multi-metric distance score. The results show that the Barabasi-Albert scale-free model gives the closest overall approximation under the chosen metric set, followed by the Watts-Strogatz small-world model. However, the biological graph is not well described by a single pure canonical model. The evidence supports a hybrid complex-network interpretation: the \textit{C. elegans} connectome combines hub structure, clustering, modularity, short paths, and non-random robustness behavior.
+\end{abstract}
+
+\tableofcontents
+\listoffigures
+\listoftables
+\clearpage
+\hypersetup{pageanchor=true}
+\pagenumbering{arabic}
+
+\chapter{Introduction}
+
+Biological neural systems are complex networks. Their behavior emerges from many interacting cells, but the global properties of the system cannot be understood by examining isolated neurons alone. The topology of the connections among neurons affects information flow, robustness, modularity, and the balance between local specialization and global integration. Network science provides a practical framework for studying these properties using graph-theoretic models and metrics \cite{newman2010networks}.
+
+This project asks a focused research question:
+
+\begin{quote}
+\textit{Which canonical network model best approximates the topology of a real biological neural network: random, lattice, small-world, or scale-free?}
+\end{quote}
+
+The empirical network analyzed here is the \textit{C. elegans} connectome, a widely used biological neural network dataset based on the nervous system reconstruction tradition originating with White et al. \cite{white1986structure}. The synthetic comparison models are selected because they represent central ideas in complex systems: random connectivity, local lattice structure, small-world shortcuts, and preferential-attachment hubs \cite{erdos1959random,watts1998collective,barabasi1999emergence}.
+
+The goal is not to claim that a nervous system is exactly one simple mathematical model. Biological networks are shaped by development, spatial embedding, functional constraints, and evolutionary pressures. Instead, the goal is to build a reproducible end-to-end analysis, quantify similarity across interpretable metrics, and make a cautious scientific conclusion about which canonical model is the closest approximation.
+
+\chapter{Background}
+
+\section{Complex Systems and Network Topology}
+
+A complex system consists of many interacting components whose collective behavior can display emergent structure. In neural systems, individual neurons and muscles interact through synaptic and electrical connections. When these interactions are represented as a graph, nodes correspond to biological units and edges correspond to connections. Graph topology then becomes a compact way to study system-level organization.
+
+Important network properties include clustering, path length, hubs, modularity, assortativity, and robustness. Clustering measures the tendency of neighboring nodes to be connected. Path length measures how many steps separate nodes on average. Hubs are unusually high-degree nodes that can support integration but also create vulnerability to targeted damage. Modularity measures the extent to which nodes form communities or modules. Robustness experiments test how network connectivity changes when nodes are removed.
+
+\section{Random Networks}
+
+The Erdos-Renyi random graph is a baseline model in which edges are placed randomly \cite{erdos1959random}. In this project, the random model is generated as $G(n,m)$ so that it matches the empirical graph's number of nodes and edges. Random graphs often have short path lengths, especially when the graph is sufficiently dense, but they usually have low clustering and weak hub structure compared with many biological networks.
+
+\section{Lattice Networks}
+
+A regular lattice graph represents local connectivity. In a ring lattice, each node connects to a fixed number of nearest neighbors. Such graphs tend to have high clustering but long path lengths because information must travel through many local steps to cross the network. A lattice model is useful as a structured opposite to a random graph.
+
+\section{Small-World Networks}
+
+Watts and Strogatz showed that networks can combine high clustering with short path lengths when a small number of local lattice edges are rewired as long-range shortcuts \cite{watts1998collective}. This is important for biological systems because nervous systems often require both local processing and efficient communication across distant functional groups. Small-world structure has therefore become a common hypothesis in neural and biological network analysis.
+
+\section{Scale-Free Networks}
+
+The Barabasi-Albert model generates networks through growth and preferential attachment \cite{barabasi1999emergence}. New nodes attach preferentially to already well-connected nodes, producing hubs and a heterogeneous degree distribution. Scale-free-like organization can support efficient integration and robustness to random failure, but it also makes networks vulnerable to targeted removal of hubs.
+
+\section{Biological Neural Networks as Hybrid Systems}
+
+Real neural systems rarely match one canonical model exactly. Biological connectomes can show small-world organization, modularity, hubs, and robustness patterns simultaneously. A cautious analysis should therefore compare models quantitatively while avoiding the claim that one simple model fully explains a biological nervous system.
+
+\chapter{Dataset}
+
+\section{Source}
+
+The primary dataset is the OpenWorm ConnectomeToolbox file \cite{openwormtoolbox}:
+
+\begin{center}
+\url{https://raw.githubusercontent.com/openworm/ConnectomeToolbox/main/cect/data/aconnectome_white_1986_whole.csv}
+\end{center}
+
+The local raw file is:
+
+\begin{center}
+\texttt{data/raw/celegans\_aconnectome\_white\_1986\_whole.csv}
+\end{center}
+
+The raw table contains presynaptic node, postsynaptic node, connection type, and synapse count. The source graph is therefore directed and weighted, with edge attributes describing chemical or electrical connection type.
+
+\section{Graph Preparation}
+
+The project constructs both a directed weighted graph and an undirected projection. The undirected graph is used for the main comparison because the canonical graph models in this course project are undirected. Self-loops are removed. Edge weights and connection types are preserved in the processed edge list, but the main metrics are computed on unweighted topology.
+
+\begin{table}[H]
+\centering
+\caption{Empirical dataset summary.}
+\label{tab:dataset-summary}
+\begin{tabular}{lr}
+\toprule
+Quantity & Value \\
+\midrule
+Raw connection records & 2961 \\
+Directed nodes & 309 \\
+Directed edges & 2812 \\
+Undirected nodes & 309 \\
+Undirected edges & 2511 \\
+Largest connected component nodes & 309 \\
+Largest connected component edges & 2511 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Because the largest connected component contains all 309 nodes, shortest-path metrics are computed on the full undirected analysis graph.
+
+\chapter{Methods}
+
+\section{Project Pipeline}
+
+The analysis pipeline performs the following steps:
+
+\begin{enumerate}
+    \item Download the \textit{C. elegans} connectome into the raw data directory.
+    \item Load the raw edge table into Python.
+    \item Build directed weighted and undirected projected NetworkX graphs.
+    \item Remove self-loops.
+    \item Save the processed edge list.
+    \item Generate matched synthetic graph models.
+    \item Compute graph metrics for the empirical and synthetic graphs.
+    \item Run robustness experiments under random and targeted node removal.
+    \item Compare synthetic models using normalized metric distance.
+    \item Save all tables, figures, and report-ready outputs.
+\end{enumerate}
+
+The implementation uses Python with pandas for tabular data handling, NetworkX for graph construction and metrics, and Matplotlib for visualization \cite{mckinney2010pandas,hagberg2008networkx,hunter2007matplotlib}.
+
+The reproducible command is:
+
+\begin{verbatim}
+conda run -n coglab python src/main.py
+\end{verbatim}
+
+\section{Synthetic Network Generation}
+
+Let $G_{\mathrm{real}}$ denote the undirected \textit{C. elegans} graph, with $N=309$ nodes and $M=2511$ edges. The empirical average degree is
+
+\begin{equation}
+\bar{k} = \frac{2M}{N} = 16.25.
+\end{equation}
+
+Four synthetic models are generated:
+
+\begin{itemize}
+    \item \textbf{Erdos-Renyi random graph:} generated as $G(n,m)$ with $n=309$ and $m=2511$, matching the empirical node and edge counts exactly.
+    \item \textbf{Regular lattice graph:} generated as a ring lattice with approximately the empirical average degree.
+    \item \textbf{Watts-Strogatz small-world graph:} generated with the same node count and approximate average degree. The ten rewiring probabilities are listed in Table~\ref{tab:ws-sweep}.
+    \item \textbf{Barabasi-Albert scale-free graph:} generated with an attachment parameter chosen to approximate the empirical average degree.
+\end{itemize}
+
+\section{Graph Metrics}
+
+For each graph, the following metrics are computed:
+
+\begin{itemize}
+    \item Number of nodes and edges
+    \item Density
+    \item Average degree and degree variance
+    \item Average clustering coefficient
+    \item Transitivity
+    \item Average shortest path length on the largest connected component
+    \item Diameter on the largest connected component
+    \item Global efficiency \cite{latora2001efficient}
+    \item Maximum degree and top hub nodes
+    \item Degree, betweenness, and closeness centrality
+    \item Greedy modularity communities and modularity \cite{girvan2002community}
+    \item Degree assortativity
+\end{itemize}
+
+\section{Model Distance}
+
+The final quantitative comparison uses a normalized metric distance. For model $s$ and empirical graph $r$, the distance is
+
+\begin{equation}
+D(s,r) =
+\frac{1}{|Q|}
+\sum_{q \in Q}
+\frac{|x_{s,q}-x_{r,q}|}{|x_{r,q}|},
+\end{equation}
+
+where $Q$ is the selected metric set. The selected metrics are average clustering coefficient, average shortest path length, density, degree variance, modularity, assortativity, and global efficiency. A lower value indicates a closer match to the empirical graph under this chosen metric objective.
+
+\section{Robustness Experiments}
+
+Two node-removal experiments are performed:
+
+\begin{itemize}
+    \item \textbf{Random removal:} remove 0\%, 5\%, 10\%, 20\%, 30\%, 40\%, and 50\% of nodes uniformly at random. Each fraction is repeated 20 times, and the mean and standard deviation of the largest connected component fraction are recorded.
+    \item \textbf{Targeted removal:} remove nodes in descending order of degree and record the largest connected component fraction after each removal fraction.
+\end{itemize}
+
+\chapter{Results}
+
+\section{Empirical Graph Properties}
+
+The empirical \textit{C. elegans} graph has 309 nodes and 2511 undirected edges. Its density is 0.0528, average degree is 16.25, degree variance is 180.04, average clustering is 0.3511, average shortest path length is 2.6649, global efficiency is 0.4308, modularity is 0.3689, and assortativity is -0.1268.
+
+The highest-degree node in the processed graph is \texttt{LegacyBodyWallMuscles}, with degree 114. Major neuronal hubs include \texttt{AVAR}, \texttt{AVAL}, \texttt{AVBL}, \texttt{AVBR}, \texttt{AVER}, \texttt{AVDR}, \texttt{AVEL}, \texttt{PVCL}, and \texttt{PVCR}. This strong degree heterogeneity is important for interpreting the scale-free model comparison.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{real_network_visualization.png}
+\caption{Network layout visualization of the empirical \textit{C. elegans} analysis graph.}
+\label{fig:real-network}
+\end{figure}
+
+\section{Metric Comparison}
+
+\begin{table}[H]
+\centering
+\caption{Selected graph metrics for the empirical graph and synthetic models.}
+\label{tab:metric-comparison}
+\small
+\begin{tabular}{lrrrrrrr}
+\toprule
+Network & Edges & Avg. deg. & Deg. var. & Clust. & Path & Eff. & Mod. \\
+\midrule
+Real & 2511 & 16.25 & 180.04 & 0.351 & 2.665 & 0.431 & 0.369 \\
+Erdos-Renyi & 2511 & 16.25 & 14.51 & 0.052 & 2.350 & 0.459 & 0.200 \\
+Regular lattice & 2472 & 16.00 & 0.00 & 0.700 & 10.130 & 0.185 & 0.550 \\
+Watts-Strogatz & 2472 & 16.00 & 4.10 & 0.261 & 2.525 & 0.430 & 0.457 \\
+Barabasi-Albert & 2408 & 15.59 & 140.77 & 0.125 & 2.330 & 0.462 & 0.207 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The Erdos-Renyi graph matches edge count and density but has much lower clustering and degree variance than the real graph. The regular lattice has high clustering but very long path length and no degree variance. The Watts-Strogatz graph captures short paths and moderate clustering. The Barabasi-Albert graph best captures degree heterogeneity while also producing short paths.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{metric_comparison_barplot.png}
+\caption{Bar plot comparison of major metrics across the biological graph and synthetic models.}
+\label{fig:metric-barplot}
+\end{figure}
+
+\section{Model Visualizations}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{model_network_visualizations.png}
+\caption{Side-by-side network visualizations for the empirical graph and synthetic models.}
+\label{fig:model-visualizations}
+\end{figure}
+
+\section{Degree Distribution and Centrality}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{degree_distribution_comparison.png}
+\caption{Degree distribution comparison across the empirical graph and synthetic models.}
+\label{fig:degree-distribution}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{centrality_distribution_comparison.png}
+\caption{Degree centrality versus betweenness centrality distributions.}
+\label{fig:centrality-distribution}
+\end{figure}
+
+The degree distribution results show that the empirical graph has stronger hub structure than the Erdos-Renyi, lattice, and Watts-Strogatz models. The Barabasi-Albert model is closer to the empirical graph in degree heterogeneity, although it does not reproduce all biological clustering and modularity features.
+
+\section{Watts-Strogatz Sweep}
+
+The Watts-Strogatz rewiring sweep identifies $p=0.3$ as the best value under the match score used in the pipeline. The result illustrates the core small-world tradeoff: increasing rewiring decreases path length, but also reduces clustering.
+
+\begin{table}[H]
+\centering
+\caption{Watts-Strogatz rewiring sweep. Lower match score is better.}
+\label{tab:ws-sweep}
+\small
+\begin{tabular}{rrrr}
+\toprule
+$p$ & Avg. clustering & Avg. path length & Match score \\
+\midrule
+0.000 & 0.700 & 10.130 & 7.814 \\
+0.001 & 0.699 & 9.425 & 7.108 \\
+0.005 & 0.693 & 5.647 & 3.324 \\
+0.010 & 0.686 & 4.810 & 2.480 \\
+0.030 & 0.661 & 3.790 & 1.435 \\
+0.050 & 0.615 & 3.242 & 0.841 \\
+0.100 & 0.519 & 2.840 & 0.343 \\
+0.300 & 0.261 & 2.525 & 0.230 \\
+0.500 & 0.123 & 2.418 & 0.475 \\
+1.000 & 0.048 & 2.360 & 0.607 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{clustering_vs_pathlength_ws_sweep.png}
+\caption{Watts-Strogatz rewiring probability versus clustering and average path length.}
+\label{fig:ws-sweep}
+\end{figure}
+
+\section{Robustness}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{robustness_random_removal.png}
+\caption{Random node-removal robustness. The plot shows mean largest connected component fraction with standard deviation across 20 repeats.}
+\label{fig:random-robustness}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{robustness_targeted_removal.png}
+\caption{Targeted node-removal robustness under descending-degree removal.}
+\label{fig:targeted-robustness}
+\end{figure}
+
+The biological graph is more robust to random node removal than to targeted high-degree node removal. This is consistent with the presence of hubs: random removal often misses the most central nodes, while targeted removal directly attacks high-degree structures important for global connectivity.
+
+\section{Model Distance Ranking}
+
+\begin{table}[H]
+\centering
+\caption{Normalized model-distance ranking. Lower distance means closer similarity to the empirical graph under the selected metric set.}
+\label{tab:model-ranking}
+\begin{tabular}{lrr}
+\toprule
+Model & Distance & Rank \\
+\midrule
+Barabasi-Albert & 0.2999 & 1 \\
+Watts-Strogatz & 0.3464 & 2 \\
+Erdos-Renyi & 0.4536 & 3 \\
+Regular lattice & 0.9819 & 4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth]{model_distance_ranking.png}
+\caption{Final model ranking by normalized metric distance.}
+\label{fig:model-distance}
+\end{figure}
+
+\chapter{Discussion}
+
+The final ranking indicates that the Barabasi-Albert scale-free model is the closest approximation to the \textit{C. elegans} graph under the selected normalized metric distance. The main reason is degree heterogeneity. The empirical graph contains clear hubs, and its degree variance is much larger than the Erdos-Renyi, lattice, and Watts-Strogatz graphs generated here.
+
+However, the scale-free interpretation is incomplete. The biological graph also has substantial clustering, modularity, and short path length. These are small-world and modular-network properties. The Watts-Strogatz model captures some of this behavior, especially short path length and clustering tradeoffs, and it ranks second in the final comparison.
+
+The Erdos-Renyi graph is useful as a density-matched random baseline, but it underestimates clustering and hub structure. The regular lattice graph captures strong local clustering but has path lengths that are too long and no realistic degree heterogeneity. Together, these comparisons show why the empirical nervous system should be interpreted as a hybrid complex network rather than a pure example of any single canonical model.
+
+From a complex systems perspective, this is the most meaningful result. Biological neural organization emerges from interactions among many constrained components. The resulting topology combines integration, segregation, local specialization, hub-mediated communication, modular structure, and robustness tradeoffs.
+
+\chapter{Limitations}
+
+This analysis is based on one biological connectome dataset. It does not prove that the human brain, all animal brains, or all biological neural networks follow the same topology. Network properties depend on species, scale, developmental stage, measurement method, and preprocessing.
+
+The core analysis uses an undirected unweighted projection. This makes the canonical model comparison straightforward, but it discards directionality, synaptic strength, and the distinction between chemical and electrical connections. Directed and weighted analyses could change some metric values and interpretations.
+
+The model ranking depends on metric selection and normalization. If clustering were weighted more heavily, Watts-Strogatz could become more favorable. If degree heterogeneity were emphasized more strongly, Barabasi-Albert would become even more favorable. The synthetic graphs are also stochastic, so a more extensive study should average over many generated graphs per model and report uncertainty in the ranking.
+
+Finally, canonical graph models are simplified baselines. Real connectomes are shaped by spatial constraints, body layout, functional circuits, cell types, development, and evolution. Those mechanisms are not explicitly represented in the four models tested here.
+
+\chapter{Conclusion}
+
+The research question asked which canonical model best approximates a real biological neural network: random, lattice, small-world, or scale-free. For the OpenWorm \textit{C. elegans} connectome dataset and the selected metric-distance objective, the Barabasi-Albert scale-free model is the closest approximation. The Watts-Strogatz small-world model ranks second, followed by Erdos-Renyi random and regular lattice models.
+
+The strongest scientific conclusion is not that the \textit{C. elegans} connectome is purely scale-free. Instead, it is better described as a hybrid biological complex network. It has hubs and degree heterogeneity, short path lengths, nontrivial clustering, modular organization, and stronger vulnerability to targeted hub removal than to random node removal. These features are consistent with biological systems in which topology reflects both efficient communication and robustness tradeoffs.
+
+\chapter{Future Work}
+
+Future versions of this project could extend the analysis in several directions:
+
+\begin{itemize}
+    \item Compare directed and weighted versions of the connectome.
+    \item Separate chemical and electrical subnetworks.
+    \item Average synthetic metrics across many random seeds.
+    \item Add motif analysis and rich-club analysis.
+    \item Compare additional connectome datasets from other organisms or modalities.
+    \item Test spatial, modular, or biologically constrained generative network models.
+\end{itemize}
+
+\appendix
+\chapter{Generated Artifacts}
+
+\section{Figures}
+
+The following figures are generated by the pipeline and included in this report:
+
+\begin{itemize}
+    \item \texttt{real\_network\_visualization.png}
+    \item \texttt{model\_network\_visualizations.png}
+    \item \texttt{degree\_distribution\_comparison.png}
+    \item \texttt{clustering\_vs\_pathlength\_ws\_sweep.png}
+    \item \texttt{metric\_comparison\_barplot.png}
+    \item \texttt{centrality\_distribution\_comparison.png}
+    \item \texttt{robustness\_random\_removal.png}
+    \item \texttt{robustness\_targeted\_removal.png}
+    \item \texttt{model\_distance\_ranking.png}
+\end{itemize}
+
+\section{Tables}
+
+The following CSV tables are generated by the pipeline:
+
+\begin{itemize}
+    \item \texttt{real\_network\_summary.csv}
+    \item \texttt{all\_metrics\_comparison.csv}
+    \item \texttt{model\_distance\_ranking.csv}
+    \item \texttt{ws\_sweep\_results.csv}
+    \item \texttt{robustness\_random.csv}
+    \item \texttt{robustness\_targeted.csv}
+\end{itemize}
+
+\begin{thebibliography}{99}
+
+\bibitem{white1986structure}
+J. G. White, E. Southgate, J. N. Thomson, and S. Brenner.
+\newblock The structure of the nervous system of the nematode \textit{Caenorhabditis elegans}.
+\newblock \textit{Philosophical Transactions of the Royal Society of London. Series B, Biological Sciences}, 314(1165):1--340, 1986.
+\newblock doi: \url{https://doi.org/10.1098/rstb.1986.0056}.
+
+\bibitem{openwormtoolbox}
+OpenWorm Foundation.
+\newblock ConnectomeToolbox data repository.
+\newblock \url{https://github.com/openworm/ConnectomeToolbox}. Accessed May 8, 2026.
+
+\bibitem{erdos1959random}
+P. Erdos and A. Renyi.
+\newblock On random graphs.
+\newblock \textit{Publicationes Mathematicae}, 6:290--297, 1959.
+
+\bibitem{watts1998collective}
+D. J. Watts and S. H. Strogatz.
+\newblock Collective dynamics of small-world networks.
+\newblock \textit{Nature}, 393:440--442, 1998.
+\newblock doi: \url{https://doi.org/10.1038/30918}.
+
+\bibitem{barabasi1999emergence}
+A.-L. Barabasi and R. Albert.
+\newblock Emergence of scaling in random networks.
+\newblock \textit{Science}, 286(5439):509--512, 1999.
+\newblock doi: \url{https://doi.org/10.1126/science.286.5439.509}.
+
+\bibitem{newman2010networks}
+M. E. J. Newman.
+\newblock \textit{Networks: An Introduction}.
+\newblock Oxford University Press, 2010.
+
+\bibitem{latora2001efficient}
+V. Latora and M. Marchiori.
+\newblock Efficient behavior of small-world networks.
+\newblock \textit{Physical Review Letters}, 87:198701, 2001.
+\newblock doi: \url{https://doi.org/10.1103/PhysRevLett.87.198701}.
+
+\bibitem{girvan2002community}
+M. Girvan and M. E. J. Newman.
+\newblock Community structure in social and biological networks.
+\newblock \textit{Proceedings of the National Academy of Sciences}, 99(12):7821--7826, 2002.
+\newblock doi: \url{https://doi.org/10.1073/pnas.122653799}.
+
+\bibitem{hagberg2008networkx}
+A. A. Hagberg, D. A. Schult, and P. J. Swart.
+\newblock Exploring network structure, dynamics, and function using NetworkX.
+\newblock In \textit{Proceedings of the 7th Python in Science Conference}, pages 11--15, 2008.
+
+\bibitem{hunter2007matplotlib}
+J. D. Hunter.
+\newblock Matplotlib: A 2D graphics environment.
+\newblock \textit{Computing in Science \& Engineering}, 9(3):90--95, 2007.
+\newblock doi: \url{https://doi.org/10.1109/MCSE.2007.55}.
+
+\bibitem{mckinney2010pandas}
+W. McKinney.
+\newblock Data structures for statistical computing in Python.
+\newblock In \textit{Proceedings of the 9th Python in Science Conference}, pages 56--61, 2010.
+
+\end{thebibliography}
+
+\end{document}

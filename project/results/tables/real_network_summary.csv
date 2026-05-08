@@ -1,0 +1,2 @@
+dataset_name,source_url,raw_rows,directed_nodes,directed_edges,directed_weighted,undirected_nodes,undirected_edges,undirected_weighted,analysis_graph,lcc_nodes,lcc_edges
+OpenWorm ConnectomeToolbox - aconnectome_white_1986_whole.csv,https://raw.githubusercontent.com/openworm/ConnectomeToolbox/main/cect/data/aconnectome_white_1986_whole.csv,2961,309,2812,True,309,2511,True,undirected_unweighted_lcc_metrics,309,2511
